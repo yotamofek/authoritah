@@ -1,0 +1,36 @@
+{
+  "name": "authoritah",
+  "version": "0.0.1-alpha.1",
+  "description": "Etcd-backed authority lock",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yotamofek/authoritah.git"
+  },
+  "keywords": [
+    "lock",
+    "etcd",
+    "authority"
+  ],
+  "author": "Yotam Ofek",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yotamofek/authoritah/issues"
+  },
+  "homepage": "https://github.com/yotamofek/authoritah#readme",
+  "dependencies": {
+    "bluebird": "^3.0.6",
+    "diehard": "^1.5.1",
+    "lodash": "^3.10.1",
+    "node-etcd": "^4.2.1",
+    "node-uuid": "^1.4.7"
+  },
+  "devDependencies": {
+    "chai": "^3.4.1",
+    "chai-as-promised": "^5.1.0",
+    "mocha": "^2.3.4"
+  }
+}

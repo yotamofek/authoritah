@@ -1,0 +1,113 @@
+'use strict';
+
+var Promise = require('bluebird');
+var chai = require('chai');
+var chaiAsPromised = require('chai-as-promised');
+
+chai.use(chaiAsPromised);
+chai.should();
+
+var Authoritah = require('./');
+
+function eventShouldEmit(emitter, event, timeout) {
+    var promise = new Promise(resolve => {
+        emitter.on(event, resolve);
+    });
+
+    return timeout === undefined
+        ? promise
+        : promise.timeout(timeout);
+}
+
+describe('Authoritah', function() {
+    this.timeout(0);
+    
+    let key = 'test_key';
+    
+    it('should lock when lock is free', () => {
+        let authority = new Authoritah(key);
+
+        return authority.ready()
+            .tap(() => authority.release());
+    });
+
+    it('should not lock when someone else has lock', () => {
+        let authority = new Authoritah(key);
+        let nonAuthority = new Authoritah(key);
+
+        return authority.ready()
+            .then(() => nonAuthority.ready())
+            .tap(() => {
+                nonAuthority.release();
+                return authority.release();
+            })
+            .should.eventually.be.not.ok;
+    });
+
+    it('lock should timeout if not extended', () => {
+        let authority = new Authoritah(key, {
+            ttl: 1
+        });
+
+        return authority.ready()
+            .then(() => eventShouldEmit(authority, 'lost', 1500));
+    });
+
+    it('lock should not timeout if extended', done => {
+        let authority = new Authoritah(key, {
+            ttl: 1
+        });
+
+        var extender;
+
+        return authority.ready()
+            .then(() => {
+                extender = setInterval(() => {
+                    authority.extend();
+                }, 100);
+                
+                return eventShouldEmit(authority, 'lost', 1500);
+            })
+            .catch(Promise.TimeoutError, err => {
+                clearInterval(extender);
+                return authority.release()
+                    .finally(() => { done(); });
+            });
+    });
+
+    it('authority should be received when previous authority is released', () => {
+        let authority = new Authoritah(key);
+        let nonAuthority = new Authoritah(key);
+
+        return authority.ready()
+            .then(() => nonAuthority.ready())
+            .then(() => authority.release())
+            .then(() => eventShouldEmit(nonAuthority, 'acquired', 1000))
+            .tap(() => nonAuthority.release());
+    });
+
+    it('authority should be received when previous authority times out', () => {
+        let authority = new Authoritah(key, {
+            ttl: 1
+        });
+        let nonAuthority = new Authoritah(key);
+
+        return authority.ready()
+            .then(() => nonAuthority.ready())
+            .then(() => eventShouldEmit(authority, 'lost'))
+            .then(() => eventShouldEmit(nonAuthority, 'acquired', 1000))
+            .finally(() => nonAuthority.release());
+    });
+
+    it('#extend() should attempt to-relock an expired lock', () => {
+        let authority = new Authoritah(key, {
+            ttl: 1
+        });
+
+        return authority.ready()
+            .then(() => eventShouldEmit(authority, 'lost', 1500))
+            .then(() => authority.extend())
+            .tap(() => authority.release())
+            .should.eventually.be.ok;
+    });
+});

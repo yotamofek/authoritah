@@ -1,0 +1,13 @@
+language: node_js
+
+node_js:
+  - stable
+
+sudo: required
+
+services:
+  - docker
+
+  
+before_install:
+  - docker run -p 4001:4001 --env "ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:4001" --env "ETCD_ADVERTISE_CLIENT_URLS=http://localhost:4001" -d --name etcd quay.io/coreos/etcd

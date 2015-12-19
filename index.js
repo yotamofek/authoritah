@@ -7,7 +7,29 @@ var _ = require('lodash');
 
 var Etcd = require('node-etcd');
 
-module.exports = class Authority extends EventEmitter {
+/**
+ * Etcd-backed authority lock.
+ */
+class Authoritah extends EventEmitter {    
+    /**
+     * @event Authoritah#acquired
+     * @description Fired when lock is acquired.
+     */
+
+    /**
+     * @event Authoritah#lost
+     * @description
+     * Fired when lock is lost, i.e. stolen or expired.
+     * If lock has expired, we assume the authority is not ready and do not make any further attemps to lock.
+     */
+    
+    /**
+     * @param {string} key - The key to lock against.
+     * @param {Object} options
+     * @param {number} [options.ttl=15] - The time-to-live of the lock in seconds, after which it expires if not extended.
+     * @param {number} [options.heartbeatInterval=2] - The number of seconds between each request to extend lock.
+     * @param {Etcd} [options.etcd] - Instantiation of node-etcd class. If no instance is given, a default one is instantiated.
+     */
     constructor(key, options) {
         super();
 
@@ -54,6 +76,11 @@ module.exports = class Authority extends EventEmitter {
                 }
             });
 
+        /**
+         * @function
+         * @description A helper function for extending the lock in a throttled manner, with an interval specified in the constructor.
+         * @example stream.on('readable', () => { authority.heartbeat(); });
+         */
         this.heartbeat = _.throttle(this.extend.bind(this), this.heartbeatInterval * 1000);
     }
 
@@ -79,11 +106,22 @@ module.exports = class Authority extends EventEmitter {
             });
     }
 
+    /**
+     * Sets authority as ready, and attempt to acquire lock.
+     * If the lock is already taken, then another attempt will be made when it is released or expires.
+     *
+     * @returns {Promise<boolean>} A promise that will be fulfilled after lock attempt with a boolean indicating whether attempt was successful.
+     */
     ready() {
         this.$ready = true;
         return this.$attemptLock();
     }
 
+    /**
+     * Releases lock if currently held, and stop making attempts to lock it.
+     *
+     * @returns {Promise} A promise that will be fulfilled when lock is released, or immediately when lock is not currently ours.
+     */
     release() {
         this.$ready = false;
 
@@ -101,6 +139,13 @@ module.exports = class Authority extends EventEmitter {
         }
     }
 
+    /**
+     * Extends lock for another time period defined by the authority's TTL.
+     * Calls #ready if authority is not marked as ready.
+     * If lock is not ours at the time, this will have no effect.
+     *
+     * @returns {Promise} Promise that will be fulfilled when the lock is extended or acquired, or immediately if lock is currently not ours.
+     */
     extend() {
         if (!this.$ready) {
             return this.ready();
@@ -120,3 +165,5 @@ module.exports = class Authority extends EventEmitter {
         );
     }
 }
+
+module.exports = Authoritah;

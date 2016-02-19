@@ -33,16 +33,18 @@ class Authoritah extends EventEmitter {
     constructor(key, options) {
         super();
 
-        options = _.isPlainObject(options) ? options : {};
-        
-        this.etcd = Promise.promisifyAll(
-            options.etcd !== undefined
-                ? options.etcd
-                : new Etcd()
+        options = _.defaults(
+            options || {},
+            {
+                ttl: 15,
+                heartbeatInterval: 2,
+                etcd: new Etcd()
+            }
         );
-        
-        this.ttl = Math.ceil(options.ttl !== undefined ? options.ttl : 15);
-        this.heartbeatInterval = options.heartbeatInterval !== undefined ? options.heartbeatInterval : 2;
+
+        this.etcd = Promise.promisifyAll(options.etcd);
+        this.ttl = Math.ceil(options.ttl);
+        this.heartbeatInterval = options.heartbeatInterval;
         
         this.key = '/authoritah/locks/' + key;
         this.$id = uuid.v4();

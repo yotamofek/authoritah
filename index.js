@@ -95,15 +95,14 @@ class Authoritah extends EventEmitter {
                 prevExist: false
             }
         )
-            .bind(this)
-            .then(function() {
+            .then(() => {
                 this.$locked = true;
                 
                 this.emit('acquired');
 
                 return true;
             })
-            .catch(function(err) {
+            .catch(err => {
                 return false;
             });
     }
@@ -132,8 +131,7 @@ class Authoritah extends EventEmitter {
                 this.key,
                 this.$id
             )
-                .bind(this)
-                .then(function() {
+                .then(() => {
                     this.$locked = false;
                 });
         } else {

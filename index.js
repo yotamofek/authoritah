@@ -60,10 +60,16 @@ class Authoritah extends EventEmitter {
                         // our lock expired, which means it was not extended soon enough.
                         // in this case, call release() to stop trying to re-acquire.
                         this.release();
-                        this.emit('lost');
-                    } else if (this.$ready) {
-                        // someone else had the lock and it expired, let's take the authrotity
-                        this.$attemptLock();
+                        this.emit('lost', {
+                            expired: true
+                        });
+                    } else {
+                        this.emit('expired');
+                        
+                        // someone else had the lock and it expired, let's take the authortity
+                        if (this.$ready) {
+                            this.$attemptLock();
+                        }
                     }
                     
                     break;
@@ -101,13 +107,17 @@ class Authoritah extends EventEmitter {
         )
             .then(() => {
                 this.$locked = true;
-                
                 this.emit('acquired');
 
                 return true;
             })
             .catch(err => {
-                return false;
+                if (err.errorCode === 105) {
+                    this.emit('taken');
+                    return false;
+                } else {
+                    throw err;
+                }
             });
     }
 
@@ -119,6 +129,8 @@ class Authoritah extends EventEmitter {
      */
     ready() {
         this.$ready = true;
+        this.emit('ready');
+
         return this.$attemptLock();
     }
 

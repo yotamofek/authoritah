@@ -3,6 +3,7 @@
 var Promise = require('bluebird');
 var chai = require('chai');
 var chaiAsPromised = require('chai-as-promised');
+var _ = require('lodash');
 
 chai.use(chaiAsPromised);
 chai.should();
@@ -10,9 +11,17 @@ chai.should();
 var Authoritah = require('./');
 
 function eventShouldEmit(emitter, event, timeout) {
-    var promise = new Promise(resolve => {
-        emitter.on(event, resolve);
-    });
+    let events = _.isArray(event) ? event : [event];
+
+    // create a promise that is only resolved after a chain of events are fired
+    let promise = _.reduce(
+        events,
+        (promise, event) =>
+            promise.then(() => new Promise(resolve => {
+                emitter.on(event, resolve);
+            })),
+        Promise.resolve()
+    );
 
     return timeout === undefined
         ? promise
@@ -107,7 +116,19 @@ describe('Authoritah', function() {
         return authority.ready()
             .then(() => eventShouldEmit(authority, 'lost', 1500))
             .then(() => authority.extend())
-            .tap(() => authority.release())
-            .should.eventually.be.ok;
+            .tap(() => authority.release());
+    });
+
+    it('if lock is forcefully deleted, it should be re-acquired', () => {
+        let authority = new Authoritah(key);
+
+        return authority.ready()
+            .then(() =>
+                Promise.all([
+                    eventShouldEmit(authority, ['lost', 'acquired']),
+                    authority.etcd.deleteAsync(authority.key)
+                ])
+            )
+            .tap(() => authority.release());
     });
 });

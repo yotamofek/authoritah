@@ -51,16 +51,18 @@ class Authoritah extends EventEmitter {
 
         this.$watcher = this.etcd.watcher(this.key)
             .on('change', event => {
+                // always update this.$locked to current state of etcd
+                this.$locked = event.node.value === this.$id;
+
                 switch (event.action) {
                 case 'expire':
-                    this.$locked = false;
-                    
-                    if (event.prevNode.value == this.$id) {
+                    if (event.prevNode.value === this.$id) {
+                        // our lock expired, which means it was not extended soon enough.
+                        // in this case, call release() to stop trying to re-acquire.
                         this.release();
                         this.emit('lost');
-                    }
-                    
-                    if (this.$ready) {
+                    } else if (this.$ready) {
+                        // someone else had the lock and it expired, let's take the authrotity
                         this.$attemptLock();
                     }
                     
@@ -68,9 +70,11 @@ class Authoritah extends EventEmitter {
 
                 case 'delete':
                 case 'compareAndDelete':
-                    if (event.prevNode.value == this.$id) {
+                    if (event.prevNode.value === this.$id) {
                         this.emit('lost');
-                    } else if (this.$ready) {
+                    }
+
+                    if (this.$ready) {
                         this.$attemptLock();
                     }
 

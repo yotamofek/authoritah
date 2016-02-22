@@ -45,7 +45,11 @@ describe('Authoritah', function() {
         let nonAuthority = new Authoritah(key);
 
         return authority.ready()
-            .then(() => nonAuthority.ready())
+            .then(() => Promise.all([
+                eventShouldEmit(nonAuthority, 'taken'),
+                nonAuthority.ready()
+            ]))
+            .get(1)
             .tap(() => {
                 nonAuthority.release();
                 return authority.release();

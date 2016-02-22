@@ -101,13 +101,17 @@ class Authoritah extends EventEmitter {
         )
             .then(() => {
                 this.$locked = true;
-                
                 this.emit('acquired');
 
                 return true;
             })
             .catch(err => {
-                return false;
+                if (err.errorCode === 105) {
+                    this.emit('taken');
+                    return false;
+                } else {
+                    throw err;
+                }
             });
     }
 

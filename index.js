@@ -30,21 +30,16 @@ class Authoritah extends EventEmitter {
      * @param {number} [options.heartbeatInterval=2] - The number of seconds between each request to extend lock.
      * @param {Etcd} [options.etcd] - Instantiation of node-etcd class. If no instance is given, a default one is instantiated.
      */
-    constructor(key, options) {
+    constructor(key, {
+        etcd: etcd = new Etcd(),
+        ttl: ttl = 15,
+        heartbeatInterval: heartbeatInterval = 2
+    } = {}) {
         super();
 
-        options = _.defaults(
-            options || {},
-            {
-                ttl: 15,
-                heartbeatInterval: 2,
-                etcd: new Etcd()
-            }
-        );
-
-        this.etcd = Promise.promisifyAll(options.etcd);
-        this.ttl = Math.ceil(options.ttl);
-        this.heartbeatInterval = options.heartbeatInterval;
+        this.etcd = Promise.promisifyAll(etcd);
+        this.ttl = Math.ceil(ttl);
+        this.heartbeatInterval = heartbeatInterval;
         
         this.key = '/authoritah/locks/' + key;
         this.$id = uuid.v4();

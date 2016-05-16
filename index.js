@@ -183,7 +183,13 @@ class Authoritah extends EventEmitter {
             .catch({errorCode: KEY_NOT_FOUND}, () => {
                 this.$locked = false;
                 return this.$attemptLock();
-            });
+            })
+            .catch({errorCode: TEST_FAILED}, err => {
+                this.$locked = false;
+                this.$ready = false;
+
+                throw err;
+            })
     }
 }
 

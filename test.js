@@ -150,5 +150,37 @@ describe('Authoritah', function() {
 
             yield authority.release();
         }).apply(this);
-    })
+    });
+
+    it('extend should recover if unknowingly lost key', () => {
+        let authority = new Authoritah(key);
+
+        return Promise.coroutine(function*() {
+            yield authority.ready();
+
+            authority.$watcher.stop();
+            yield authority.etcd.deleteAsync(authority.key);
+
+            yield authority.extend();
+
+            yield authority.release();
+        }).apply(this);
+    });
+
+    it('extend should recover if, unknowingly, key was stolen', () => {
+        let authority = new Authoritah(key);
+
+        return Promise.coroutine(function*() {
+            yield authority.ready();
+
+            authority.$watcher.stop();
+            yield authority.etcd.setAsync(authority.key, '....', {ttl: 1});
+
+            yield authority.extend().catch(_.noop);
+
+            yield authority.extend();
+
+            yield authority.release();
+        }).apply(this);
+    });
 });

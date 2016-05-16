@@ -135,4 +135,20 @@ describe('Authoritah', function() {
             )
             .tap(() => authority.release());
     });
+    
+    it('extend should recover if unknowingly lost key', () => {
+        let authority = new Authoritah(key);
+
+        return Promise.coroutine(function*() {
+            yield authority.ready();
+
+            authority.$watcher.stop();
+            authority.$watcher.index = null;
+            yield authority.etcd.deleteAsync(authority.key);
+
+            yield authority.extend();
+
+            yield authority.release();
+        }).apply(this);
+    })
 });

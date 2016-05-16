@@ -7,6 +7,10 @@ var _ = require('lodash');
 
 var Etcd = require('node-etcd');
 
+// Taken from here: https://github.com/coreos/etcd/blob/master/error/error.go
+const KEY_NOT_FOUND = 100;
+const TEST_FAILED = 101;
+
 /**
  * Etcd-backed authority lock.
  */
@@ -142,6 +146,8 @@ class Authoritah extends EventEmitter {
                 this.key,
                 this.$id
             )
+                .catch({errorCode: KEY_NOT_FOUND}, _.noop)
+                .catch({errorCode: TEST_FAILED}, _.noop)
                 .then(() => {
                     this.$locked = false;
                 });
@@ -173,7 +179,11 @@ class Authoritah extends EventEmitter {
                 ttl: this.ttl,
                 prevValue: this.$id
             }
-        );
+        )
+            .catch({errorCode: KEY_NOT_FOUND}, () => {
+                this.$locked = false;
+                return this.$attemptLock();
+            });
     }
 }
 

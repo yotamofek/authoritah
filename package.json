@@ -1,6 +1,6 @@
 {
   "name": "authoritah",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Etcd-backed authority lock",
   "main": "index.js",
   "scripts": {

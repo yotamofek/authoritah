@@ -24,7 +24,7 @@
   "dependencies": {
     "bluebird": "^3.0.6",
     "lodash": "^4.11.2",
-    "node-etcd": "^4.2.1",
+    "node-etcd": "^5.0.1",
     "node-uuid": "^1.4.7"
   },
   "devDependencies": {

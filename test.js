@@ -73,7 +73,7 @@ describe('Authoritah', function() {
 
         var extender;
 
-        return authority.ready()
+        authority.ready()
             .then(() => {
                 extender = setInterval(() => {
                     authority.extend();

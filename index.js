@@ -2,7 +2,7 @@
 
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('bluebird');
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var _ = require('lodash');
 
 var Etcd = require('node-etcd');
